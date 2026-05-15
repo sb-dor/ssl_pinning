@@ -1,0 +1,127 @@
+<h2>Как взять SSL-сертификат backend-а</h2>
+
+<p>Для backend:</p>
+
+<pre><code>https://example.web.com</code></pre>
+
+<h3>1. Скачать сертификат в папку Downloads</h3>
+
+<h4>macOS / Linux</h4>
+
+<pre><code>openssl s_client -showcerts \
+-servername example.web.com \
+-connect example.web.com:443 &lt;/dev/null 2&gt;/dev/null \
+| openssl x509 -outform PEM &gt; ~/Downloads/api_cert.pem</code></pre>
+
+<p>После выполнения файл появится тут:</p>
+
+<pre><code>~/Downloads/api_cert.pem</code></pre>
+
+<h4>Windows PowerShell</h4>
+
+<pre><code>openssl s_client -showcerts `
+-servername example.web.com `
+-connect example.web.com:443 &lt; $null 2&gt;$null `
+| openssl x509 -outform PEM &gt; "$HOME\Downloads\api_cert.pem"</code></pre>
+
+<p>Файл появится тут:</p>
+
+<pre><code>C:\Users\YOUR_USER\Downloads\api_cert.pem</code></pre>
+
+<h3>2. Добавить сертификат в Flutter project</h3>
+
+<p>Перемести файл сюда:</p>
+
+<pre><code>project/
+ └── assets/
+      └── certs/
+           └── api_cert.pem</code></pre>
+
+<p>Добавь в <code>pubspec.yaml</code>:</p>
+
+<pre><code>flutter:
+  assets:
+    - assets/certs/api_cert.pem</code></pre>
+
+<h3>3. Проверить время жизни сертификата</h3>
+
+<p>Если сертификат уже скачан:</p>
+
+<pre><code>openssl x509 -in ~/Downloads/api_cert.pem -noout -dates</code></pre>
+
+<p>Пример результата:</p>
+
+<pre><code>notBefore=May 10 00:00:00 2026 GMT
+notAfter=Aug 8 23:59:59 2026 GMT</code></pre>
+
+<p>Главное поле:</p>
+
+<pre><code>notAfter</code></pre>
+
+<p>Это дата окончания сертификата.</p>
+
+<h3>4. Проверить срок сертификата сразу с сервера</h3>
+
+<pre><code>openssl s_client -connect example.web.com:443 -servername example.web.com &lt;/dev/null 2&gt;/dev/null \
+| openssl x509 -noout -dates</code></pre>
+
+<h3>5. Посмотреть всю информацию о сертификате</h3>
+
+<pre><code>openssl x509 -in ~/Downloads/api_cert.pem -text -noout</code></pre>
+
+<p>Там будет:</p>
+
+<ul>
+  <li>issuer</li>
+  <li>domains</li>
+  <li>public key</li>
+  <li>fingerprints</li>
+  <li>срок жизни</li>
+  <li>SAN</li>
+  <li>algorithms</li>
+</ul>
+
+<h3>6. Использование в Flutter</h3>
+
+<pre><code>import 'dart:io';
+
+import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/io_client.dart';
+
+Future&lt;http.Client&gt; createPinnedHttpClient() async {
+  final sslCert = await rootBundle.load('assets/certs/api_cert.pem');
+
+  final securityContext = SecurityContext(withTrustedRoots: false);
+
+  securityContext.setTrustedCertificatesBytes(
+    sslCert.buffer.asUint8List(),
+  );
+
+  final httpClient = HttpClient(
+    context: securityContext,
+  );
+
+  return IOClient(httpClient);
+}</code></pre>
+
+<h3>7. Запрос через pinned client</h3>
+
+<pre><code>final client = await createPinnedHttpClient();
+
+final response = await client.get(
+  Uri.parse('https://example.web.com'),
+);
+
+print(response.body);</code></pre>
+
+<h3>Важно</h3>
+
+<p>
+Если сертификат backend-а истечет или будет заменен, приложение с pinning на конкретный
+<code>.pem</code> может перестать делать запросы.
+</p>
+
+<p>
+Для production лучше использовать pinning по public key / SPKI hash и заранее добавлять backup pin.
+</p>
