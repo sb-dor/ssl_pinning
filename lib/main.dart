@@ -34,9 +34,7 @@ class DependenciesScope extends InheritedWidget {
   });
 
   static Dependencies of(BuildContext context) {
-    final widget = context
-        .getElementForInheritedWidgetOfExactType<DependenciesScope>()
-        ?.widget;
+    final widget = context.getElementForInheritedWidgetOfExactType<DependenciesScope>()?.widget;
     assert(widget != null, 'No DependenciesScope was found in element tree');
     return (widget as DependenciesScope).dependencies;
   }
@@ -68,7 +66,7 @@ class _ApplicationState extends State<Application> {
   @override
   Widget build(BuildContext context) => DependenciesScope(
     dependencies: widget.dependencies,
-    child: MaterialApp(home: HomeScreen()),
+    child: const MaterialApp(home: HomeScreen()),
   );
 }
 
@@ -108,8 +106,8 @@ class _HomeScreenState extends State<HomeScreen> {
     ///
     ///
 
-    final baseUrl = Config.baseUrl;
-    final storeName = Config.storeName;
+    const baseUrl = Config.baseUrl;
+    const storeName = Config.storeName;
     final response = await dependencies.client.get(
       Uri.parse('$baseUrl/user/session'),
       headers: {
@@ -130,6 +128,5 @@ class _HomeScreenState extends State<HomeScreen> {
   /* #endregion */
 
   @override
-  Widget build(BuildContext context) =>
-      Scaffold(appBar: AppBar(title: Text('SSL Pinning')));
+  Widget build(BuildContext context) => Scaffold(appBar: AppBar(title: const Text('SSL Pinning')));
 }
