@@ -1,5 +1,10 @@
-import 'package:http/http.dart';
+import 'package:dio/dio.dart' as dio;
+import 'package:http/http.dart' as http;
 
-Future<Client> httpClient() async {
-  return Client();
+Future<http.Client> httpClient() async {
+  return http.Client();
+}
+
+Future<dio.Dio> dioClient() async {
+  return dio.Dio();
 }

@@ -2,6 +2,7 @@
 
 import 'dart:async';
 
+import 'package:dio/dio.dart' as dio;
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:ssl_pinning/config.dart';
@@ -11,7 +12,9 @@ void main() => runZonedGuarded(
   () async {
     WidgetsFlutterBinding.ensureInitialized();
     final dependencies = Dependencies();
-    dependencies.client = await httpClient();
+    dependencies
+      ..httpClient = await httpClient()
+      ..dioClient = await dioClient();
     runApp(Application(dependencies: dependencies));
   },
   (error, stackTrace) {
@@ -21,7 +24,8 @@ void main() => runZonedGuarded(
 );
 
 class Dependencies {
-  late final http.Client client;
+  late final http.Client httpClient;
+  late final dio.Dio dioClient;
 }
 
 /// {@template main}
@@ -110,7 +114,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
     const baseUrl = Config.baseUrl;
     const storeName = Config.storeName;
-    final response = await dependencies.client.get(
+
+    /// Http client implmentation
+    final httpResponse = await dependencies.httpClient.get(
       Uri.parse('$baseUrl/user/session'),
       headers: {
         'Authorization': 'Bearer dfsmlfdsfsdfsdf',
@@ -118,8 +124,22 @@ class _HomeScreenState extends State<HomeScreen> {
         'X-Warehouse-Id': 1.toString(),
       },
     );
-    print(response.body);
-    print(response.statusCode);
+    print(httpResponse.body);
+    print(httpResponse.statusCode);
+
+    /// Dio implementation
+    final dioResponse = await dependencies.dioClient.get(
+      '$baseUrl/user/session',
+      options: dio.Options(
+        headers: {
+          'Authorization': 'Bearer dfsmlfdsfsdfsdf',
+          'X-Store-Db': storeName,
+          'X-Warehouse-Id': 1.toString(),
+        },
+      ),
+    );
+    print(dioResponse.data);
+    print(dioResponse.statusCode);
   }
 
   @override
